@@ -1,0 +1,688 @@
+openapi: 3.1.0
+info:
+  title: Sarathi Next API
+  version: 1.0.0
+  description: Contract for the Sarathi Next Learner's Licence prototype integration.
+servers:
+  - url: https://api.example.com
+    description: Replace with the deployed API origin.
+tags:
+  - name: System
+  - name: Authentication
+  - name: Applications
+  - name: Documents
+  - name: Slots
+  - name: Tests
+  - name: Licence
+paths:
+  /v1/health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      responses:
+        '200':
+          description: API is ready.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /v1/auth/mobile/challenges:
+    post:
+      tags: [Authentication]
+      operationId: createMobileChallenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mobileNumber, locale]
+              properties:
+                mobileNumber: { type: string, pattern: '^[0-9]{10}$', example: '9876543210' }
+                locale: { $ref: '#/components/schemas/Locale' }
+      responses:
+        '201':
+          description: OTP challenge created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/auth/mobile/challenges/{challengeId}/verify:
+    post:
+      tags: [Authentication]
+      operationId: verifyMobileChallenge
+      parameters:
+        - $ref: '#/components/parameters/ChallengeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp, consentToStatusUpdates]
+              properties:
+                otp: { type: string, pattern: '^[0-9]{6}$' }
+                consentToStatusUpdates: { type: boolean, const: true }
+      responses:
+        '200':
+          description: Verification succeeded and session cookie is set.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/auth/aadhaar/challenges:
+    post:
+      tags: [Authentication]
+      operationId: createAadhaarChallenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [aadhaarNumber, locale]
+              properties:
+                aadhaarNumber: { type: string, pattern: '^[0-9]{12}$' }
+                locale: { $ref: '#/components/schemas/Locale' }
+      responses:
+        '201':
+          description: Aadhaar OTP challenge created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/auth/aadhaar/challenges/{challengeId}/verify:
+    post:
+      tags: [Authentication]
+      operationId: verifyAadhaarChallenge
+      parameters:
+        - $ref: '#/components/parameters/ChallengeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp, declarationsAccepted]
+              properties:
+                otp: { type: string, pattern: '^[0-9]{6}$' }
+                declarationsAccepted:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items: { type: string, enum: [identity_verification, transaction_only, confidentiality] }
+      responses:
+        '200':
+          description: Verification succeeded and session cookie is set.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/applications:
+    post:
+      tags: [Applications]
+      operationId: createApplication
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationRoute, locale]
+              properties:
+                applicationRoute: { type: string, enum: [aadhaar, non_aadhaar] }
+                locale: { $ref: '#/components/schemas/Locale' }
+      responses:
+        '201':
+          description: Application created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/applications/{applicationId}:
+    get:
+      tags: [Applications]
+      operationId: getApplication
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '200':
+          description: Current application.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/applications/{applicationId}/personal-details:
+    put:
+      tags: [Applications]
+      operationId: replacePersonalDetails
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PersonalDetails' }
+      responses:
+        '200':
+          description: Personal details saved.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/applications/{applicationId}/vehicle-category:
+    put:
+      tags: [Applications]
+      operationId: replaceVehicleCategory
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category]
+              properties:
+                category: { $ref: '#/components/schemas/VehicleCategory' }
+      responses:
+        '200':
+          description: Category saved.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /v1/applications/{applicationId}/documents/{documentType}:
+    put:
+      tags: [Documents]
+      operationId: uploadDocument
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - name: documentType
+          in: path
+          required: true
+          schema: { type: string, enum: [age_proof, address_proof] }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Document accepted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentRecord' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+  /v1/applications/{applicationId}/mock-signature:
+    post:
+      tags: [Documents]
+      operationId: createMockSignature
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '201':
+          description: Mock signature recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [signatureId, createdAt]
+                properties:
+                  signatureId: { type: string }
+                  createdAt: { type: string, format: date-time }
+  /v1/applications/{applicationId}/self-attested-form:
+    get:
+      tags: [Documents]
+      operationId: getSelfAttestedForm
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '200':
+          description: Pre-filled form data for preview.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SelfAttestedForm' }
+  /v1/applications/{applicationId}/self-attested-form/sign:
+    post:
+      tags: [Documents]
+      operationId: signSelfAttestedForm
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [signatureId, declarationAccepted]
+              properties:
+                signatureId: { type: string }
+                declarationAccepted: { type: boolean, const: true }
+      responses:
+        '200':
+          description: Form digitally signed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SelfAttestedForm' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/applications/{applicationId}/documents/submit:
+    post:
+      tags: [Documents]
+      operationId: submitDocuments
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '200':
+          description: Document task completed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/slots:
+    get:
+      tags: [Slots]
+      operationId: listSlots
+      parameters:
+        - name: applicationId
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Available slots.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [slots]
+                properties:
+                  slots: { type: array, items: { $ref: '#/components/schemas/Slot' } }
+  /v1/slots/{slotId}/holds:
+    post:
+      tags: [Slots]
+      operationId: createSlotHold
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/SlotId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationId]
+              properties:
+                applicationId: { type: string }
+      responses:
+        '201':
+          description: Slot held.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SlotHold' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/holds/{holdId}/confirm:
+    post:
+      tags: [Slots]
+      operationId: confirmSlotHold
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Booking confirmed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SlotBooking' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/slots/{slotId}/waitlist:
+    post:
+      tags: [Slots]
+      operationId: joinSlotWaitlist
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/SlotId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationId]
+              properties:
+                applicationId: { type: string }
+      responses:
+        '201':
+          description: Added to waitlist.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [waitlistId, status]
+                properties:
+                  waitlistId: { type: string }
+                  status: { type: string, const: waiting }
+  /v1/applications/{applicationId}/tests:
+    post:
+      tags: [Tests]
+      operationId: startTest
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '201':
+          description: Test attempt started.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestAttempt' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/tests/{testId}/answers:
+    post:
+      tags: [Tests]
+      operationId: submitTestAnswer
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [questionId, answerId]
+              properties:
+                questionId: { type: string }
+                answerId: { type: string }
+      responses:
+        '204': { description: Answer saved. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/tests/{testId}/submit:
+    post:
+      tags: [Tests]
+      operationId: submitTest
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Test scored.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestResult' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/applications/{applicationId}/status:
+    get:
+      tags: [Applications]
+      operationId: getApplicationStatus
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '200':
+          description: Application status and task states.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApplicationStatus' }
+  /v1/applications/{applicationId}/licence:
+    get:
+      tags: [Licence]
+      operationId: downloadLicence
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '200':
+          description: Licence PDF.
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sarathi_session
+  parameters:
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema: { type: string, pattern: '^app_[A-Za-z0-9]+$' }
+    ChallengeId:
+      name: challengeId
+      in: path
+      required: true
+      schema: { type: string }
+    SlotId:
+      name: slotId
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Locale: { type: string, enum: [en, hi] }
+    Health:
+      type: object
+      required: [status, version, time]
+      properties:
+        status: { type: string, const: ok }
+        version: { type: string }
+        time: { type: string, format: date-time }
+    OtpChallenge:
+      type: object
+      required: [challengeId, expiresAt, resendAfterSeconds, maskedDestination]
+      properties:
+        challengeId: { type: string }
+        expiresAt: { type: string, format: date-time }
+        resendAfterSeconds: { type: integer, minimum: 0 }
+        maskedDestination: { type: string, example: '******3210' }
+    AuthResult:
+      type: object
+      required: [authenticated, applicationId, nextStep]
+      properties:
+        authenticated: { type: boolean, const: true }
+        applicationId: { type: string }
+        nextStep: { type: string, enum: [personal_details, task_list] }
+    PersonName:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 80 }
+        middleName: { type: string, maxLength: 80 }
+        lastName: { type: string, minLength: 1, maxLength: 80 }
+    Address:
+      type: object
+      required: [state, pinCode]
+      properties:
+        state: { type: string }
+        pinCode: { type: string, pattern: '^[0-9]{6}$' }
+    PersonalDetails:
+      type: object
+      required: [applicantName, relativeType, relativeName, legalSex, dateOfBirth, bloodGroup, applicantPhoneNumber, emergencyPhoneNumber, identificationMarks, permanentAddress, presentAddressSameAsPermanent, declarationAccepted]
+      properties:
+        applicantName: { $ref: '#/components/schemas/PersonName' }
+        relativeType: { type: string, enum: [father, mother, husband, guardian] }
+        relativeName: { $ref: '#/components/schemas/PersonName' }
+        legalSex: { type: string, enum: [female, male, non_binary, prefer_not_to_say, self_describe] }
+        legalSexSelfDescription: { type: string, maxLength: 100 }
+        dateOfBirth: { type: string, format: date }
+        age: { type: integer, minimum: 0, readOnly: true }
+        bloodGroup: { type: string, enum: [A_POSITIVE, A_NEGATIVE, B_POSITIVE, B_NEGATIVE, O_POSITIVE, O_NEGATIVE, AB_POSITIVE, AB_NEGATIVE] }
+        applicantPhoneNumber: { type: string, pattern: '^[0-9]{10}$', readOnly: true }
+        emergencyPhoneNumber: { type: string, pattern: '^[0-9]{10}$' }
+        identificationMarks:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items: { type: string, minLength: 1, maxLength: 200 }
+        permanentAddress: { $ref: '#/components/schemas/Address' }
+        presentAddressSameAsPermanent: { type: boolean }
+        presentAddress: { $ref: '#/components/schemas/Address' }
+        declarationAccepted: { type: boolean, const: true }
+    VehicleCategory: { type: string, enum: [two_wheeler, car, commercial] }
+    TaskState: { type: string, enum: [not_started, in_progress, completed, blocked] }
+    Application:
+      type: object
+      required: [applicationId, route, status, tasks, createdAt, updatedAt]
+      properties:
+        applicationId: { type: string }
+        referenceNumber: { type: string }
+        route: { type: string, enum: [aadhaar, non_aadhaar] }
+        status: { type: string, enum: [draft, in_progress, submitted, test_pending, passed, failed, licence_issued] }
+        personalDetails: { $ref: '#/components/schemas/PersonalDetails' }
+        vehicleCategory: { $ref: '#/components/schemas/VehicleCategory' }
+        tasks:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/TaskState' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    DocumentRecord:
+      type: object
+      required: [documentId, type, filename, mediaType, sizeBytes, status]
+      properties:
+        documentId: { type: string }
+        type: { type: string, enum: [age_proof, address_proof] }
+        filename: { type: string }
+        mediaType: { type: string }
+        sizeBytes: { type: integer, maximum: 512000 }
+        status: { type: string, enum: [accepted, rejected, pending_review] }
+    SelfAttestedForm:
+      type: object
+      required: [applicationId, version, details, signed]
+      properties:
+        applicationId: { type: string }
+        version: { type: integer, minimum: 1 }
+        details: { $ref: '#/components/schemas/Application' }
+        signed: { type: boolean }
+        signedAt: { type: string, format: date-time }
+    Slot:
+      type: object
+      required: [slotId, startsAt, endsAt, availableSeats, status]
+      properties:
+        slotId: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        availableSeats: { type: integer, minimum: 0 }
+        status: { type: string, enum: [available, full] }
+    SlotHold:
+      type: object
+      required: [holdId, slot, expiresAt, status]
+      properties:
+        holdId: { type: string }
+        slot: { $ref: '#/components/schemas/Slot' }
+        expiresAt: { type: string, format: date-time }
+        status: { type: string, const: held }
+    SlotBooking:
+      type: object
+      required: [bookingId, slot, status, confirmedAt]
+      properties:
+        bookingId: { type: string }
+        slot: { $ref: '#/components/schemas/Slot' }
+        status: { type: string, const: confirmed }
+        confirmedAt: { type: string, format: date-time }
+    TestQuestion:
+      type: object
+      required: [questionId, text, answers]
+      properties:
+        questionId: { type: string }
+        text: { type: string }
+        answers:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [answerId, text]
+            properties:
+              answerId: { type: string }
+              text: { type: string }
+    TestAttempt:
+      type: object
+      required: [testId, questionCount, passMark, questions, expiresAt]
+      properties:
+        testId: { type: string }
+        questionCount: { type: integer }
+        passMark: { type: integer }
+        questions: { type: array, items: { $ref: '#/components/schemas/TestQuestion' } }
+        expiresAt: { type: string, format: date-time }
+    TestResult:
+      type: object
+      required: [testId, score, total, passed, completedAt]
+      properties:
+        testId: { type: string }
+        score: { type: integer }
+        total: { type: integer }
+        passed: { type: boolean }
+        completedAt: { type: string, format: date-time }
+    ApplicationStatus:
+      type: object
+      required: [applicationId, status, tasks, updatedAt]
+      properties:
+        applicationId: { type: string }
+        status: { type: string }
+        tasks:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/TaskState' }
+        nextAction: { type: string }
+        updatedAt: { type: string, format: date-time }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            fieldErrors:
+              type: object
+              additionalProperties: { type: string }
+            requestId: { type: string }
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unauthenticated:
+      description: Authentication required or OTP invalid.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    NotFound:
+      description: Resource not found.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Conflict:
+      description: Resource state conflict.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    RateLimited:
+      description: Too many requests.
+      headers: { Retry-After: { schema: { type: integer } } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    PayloadTooLarge:
+      description: File exceeds 500KB.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    UnsupportedMediaType:
+      description: Unsupported file type.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
