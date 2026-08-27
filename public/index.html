@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#FAF7F2" />
+    <title>Sarathi Next — demo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header"><div class="header-inner"><a href="/" class="brand">Sarathi Next <span>Demo</span></a></div></header>
+    <main id="main" class="container">
+      <div class="notice" role="note"><strong>Prototype:</strong> This demo uses mock data. Files are stored privately in the demo object-storage binding.</div>
+      <section id="start-view">
+        <p class="eyebrow">Learner's Licence</p>
+        <h1>Apply for a Learner's Licence</h1>
+        <p class="lead">Start a saved demo application. You will choose a vehicle category, upload two mock proofs, and book a mock test slot.</p>
+        <ul class="plain-list"><li>Usually takes 5 minutes</li><li>Use a test file smaller than 500 KB</li><li>Do not enter real identity or document information</li></ul>
+        <form id="start-form" novalidate>
+          <div id="start-errors" class="errors" hidden></div>
+          <div class="field"><label for="name">Your name</label><input id="name" name="name" autocomplete="name" required /></div>
+          <div class="field"><label for="mobile">Mobile number</label><p class="hint">For example, 9876543210. This is mock data.</p><input id="mobile" name="mobile" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required /></div>
+          <fieldset><legend>How do you want to apply?</legend><label class="choice"><input type="radio" name="method" value="aadhaar" required /> Use mock Aadhaar verification</label><label class="choice"><input type="radio" name="method" value="mobile" /> Use mock mobile verification</label></fieldset>
+          <button class="button" type="submit">Start now</button>
+        </form>
+      </section>
+      <section id="application-view" hidden aria-live="polite"></section>
+    </main>
+    <footer><div class="container">Sarathi Next is a hackathon prototype. It is not an official government service.</div></footer>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

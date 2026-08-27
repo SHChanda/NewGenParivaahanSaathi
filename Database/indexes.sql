@@ -1,0 +1,13 @@
+DROP INDEX IF EXISTS one_active_hold_per_slot;
+CREATE INDEX IF NOT EXISTS active_holds_slot_idx ON slot_holds(slot_id) WHERE status = 'active';
+DROP INDEX IF EXISTS one_confirmed_booking_per_slot;
+CREATE INDEX IF NOT EXISTS applications_user_idx ON applications(user_id);
+CREATE INDEX IF NOT EXISTS identity_verifications_user_idx ON identity_verifications(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS application_tasks_application_task_idx ON application_tasks(application_id, task_code);
+CREATE INDEX IF NOT EXISTS documents_application_idx ON documents(application_id);
+CREATE INDEX IF NOT EXISTS slots_date_centre_idx ON test_slots(slot_date, centre_id);
+CREATE INDEX IF NOT EXISTS holds_expiry_idx ON slot_holds(expires_at) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS bookings_application_idx ON bookings(application_id);
+CREATE INDEX IF NOT EXISTS bookings_direct_token_idx ON bookings(direct_booking_token) WHERE direct_booking_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS waitlist_slot_idx ON waitlist_entries(slot_id) WHERE status = 'waiting';
+CREATE INDEX IF NOT EXISTS waitlist_direct_token_idx ON waitlist_entries(direct_booking_token) WHERE direct_booking_token IS NOT NULL;

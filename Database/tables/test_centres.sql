@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS test_centres (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(150) NOT NULL,
+    address TEXT NOT NULL,
+    district VARCHAR(100),
+    state VARCHAR(100),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

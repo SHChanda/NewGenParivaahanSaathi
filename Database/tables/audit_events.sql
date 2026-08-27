@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS audit_events (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    application_id UUID REFERENCES applications(id),
+    event_type VARCHAR(60) NOT NULL,
+    event_data JSONB NOT NULL DEFAULT '{}'::JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
