@@ -1,16 +1,13 @@
 {
   "name": "sarathi-next",
-  "private": true,
   "version": "0.2.0",
+  "private": true,
+  "engines": { "node": ">=22.13.0" },
   "scripts": {
-    "dev": "wrangler dev",
-    "frontend:dev": "vite --config frontend/vite.config.ts",
-    "frontend:build": "vite build --config frontend/vite.config.ts",
-    "frontend:preview": "vite preview --config frontend/vite.config.ts",
-    "d1:generate-schema": "node scripts/generate_d1_schema.mjs",
-    "deploy": "wrangler deploy",
-    "d1:migrate:local": "wrangler d1 migrations apply sarathi-next-demo --local",
-    "d1:migrate:remote": "wrangler d1 migrations apply sarathi-next-demo --remote"
+    "dev": "vinext dev",
+    "build": "vinext build",
+    "start": "vinext start",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -20,6 +17,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
     "@cloudflare/workers-types": "4.20260515.1",
+    "@openai/sites-vite-plugin": "0.2.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
