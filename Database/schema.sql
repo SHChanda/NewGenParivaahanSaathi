@@ -10,6 +10,7 @@ CREATE SCHEMA IF NOT EXISTS sarathi;
 SET search_path TO sarathi, public;
 
 \ir functions.sql
+\ir tables/auth_challenges.sql
 \ir tables/users.sql
 \ir tables/vehicle_categories.sql
 \ir tables/applications.sql
@@ -29,5 +30,6 @@ SET search_path TO sarathi, public;
 \ir tables/audit_events.sql
 \ir indexes.sql
 \ir triggers.sql
+\ir routines.sql
 
 COMMIT;

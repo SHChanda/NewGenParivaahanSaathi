@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.pnpm-store/
+.next/
+.vinext/
+.wrangler/
+*.log
+.env*
+!.env.example
